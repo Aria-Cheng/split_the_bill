@@ -365,12 +365,6 @@
     border-radius:3px;
     flex-wrap:wrap;
   }
-  .transfer.is-settled{
-    opacity:0.6;
-  }
-  .transfer.is-settled .amt{
-    text-decoration:line-through;
-  }
   .transfer .arrow{ color:var(--ink-soft); }
   .transfer .amt{
     margin-left:auto;
@@ -378,23 +372,6 @@
     font-weight:600;
     color:var(--rust);
   }
-  .transfer .mark-paid{
-    font-family:inherit;
-    font-size:12px;
-    padding:6px 10px;
-    border:1px solid var(--line);
-    border-radius:20px;
-    background:var(--paper-deep);
-    color:var(--ink-soft);
-    cursor:pointer;
-    white-space:nowrap;
-  }
-  .transfer .mark-paid.on{
-    background:var(--sage);
-    border-color:var(--sage);
-    color:var(--paper);
-  }
-  .transfer .mark-paid:hover{ opacity:0.85; }
 
   .stamp{
     display:inline-block;
@@ -429,7 +406,6 @@
     <div>
       <h1>分帳本</h1>
     </div>
-    <div class="sub">依專案分開計算・成員自訂・自動結算</div>
   </header>
 
   <div id="syncStatus" style="font-size:12px;color:var(--ink-soft);margin-bottom:16px;"></div>
@@ -539,7 +515,7 @@
       if(!data) return;
       state.projects = data.projects;
     } else {
-      state.projects.push({ id, name: name.trim(), members: [], expenses: [], settled: [] });
+      state.projects.push({ id, name: name.trim(), members: [], expenses: [] });
     }
     state.currentId = id;
     render();
@@ -626,23 +602,6 @@
     render();
   }
 
-  // ---------- settlement marking ----------
-  async function toggleSettled(p, from, to, isCurrentlySettled){
-    if(API_URL){
-      const action = isCurrentlySettled ? 'unmarkSettled' : 'markSettled';
-      const data = await callApi(action, { projectId: p.id, from, to });
-      if(!data) return;
-      state.projects = data.projects;
-    } else {
-      p.settled = p.settled || [];
-      if(isCurrentlySettled){
-        p.settled = p.settled.filter(s => !(s.from === from && s.to === to));
-      } else {
-        p.settled.push({ from, to });
-      }
-    }
-    render();
-  }
 
   // ---------- settlement math ----------
   function computeBalances(p){
@@ -943,14 +902,8 @@
       list.className = 'transfer-list';
       transfers.forEach(t => {
         const row = document.createElement('div');
-        const isSettled = (p.settled || []).some(s => s.from === t.from && s.to === t.to);
-        row.className = 'transfer' + (isSettled ? ' is-settled' : '');
-        row.innerHTML = `
-          <span>${escapeHtml(t.from)}</span><span class="arrow">→</span><span>${escapeHtml(t.to)}</span>
-          <span class="amt">${fmt(t.amount)}</span>
-          <button class="mark-paid ${isSettled ? 'on' : ''}">${isSettled ? '已轉帳 ✓' : '標記已轉帳'}</button>
-        `;
-        row.querySelector('.mark-paid').onclick = () => toggleSettled(p, t.from, t.to, isSettled);
+        row.className = 'transfer';
+        row.innerHTML = `<span>${escapeHtml(t.from)}</span><span class="arrow">→</span><span>${escapeHtml(t.to)}</span><span class="amt">${fmt(t.amount)}</span>`;
         list.appendChild(row);
       });
       transferCol.appendChild(list);
